@@ -1,0 +1,28 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Case {
+  id              Int       @id @default(autoincrement())
+  phone           String
+  type            String    @default("CONSULTA")
+  status          String    @default("ABIERTO")
+  intent          String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  messages        Message[]
+}
+
+model Message {
+  id          Int      @id @default(autoincrement())
+  caseId      Int
+  direction   String
+  text        String
+  timestamp   DateTime @default(now())
+  case        Case     @relation(fields: [caseId], references: [id])
+}
