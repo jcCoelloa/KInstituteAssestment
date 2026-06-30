@@ -1,31 +1,25 @@
 export type Intent = 'FECHAS_CICLOS' | 'FECHAS_PAGO' | 'INSCRIPCION' | 'ADMISIONES' | 'RECLAMO' | 'DESCONOCIDA';
 
+type IntentRule = {
+  intent: Intent;
+  regex: RegExp;
+};
+
 export class IntentionsService {
+  private readonly rules: IntentRule[] = [
+    { intent: 'RECLAMO', regex: /reclamo|queja|problema/ },
+    { intent: 'FECHAS_PAGO', regex: /pago|matr[ií]cula|cuota|fecha de pago/ },
+    { intent: 'INSCRIPCION', regex: /inscrib|registr|matricul|inscripción/ },
+    { intent: 'ADMISIONES', regex: /admision|ingenier[ií]a|carrera|admisión/ },
+    { intent: 'FECHAS_CICLOS', regex: /ciclo|inicio|fin|vigente|empieza|termina/ },
+  ];
+
   // Clasifica el mensaje entrante según palabras clave y devuelve la intención correspondiente.
   detect(text: string): Intent {
     const normalized = text.toLowerCase().trim();
+    const matchedRule = this.rules.find(({ regex }) => regex.test(normalized));
 
-    if (/reclamo|queja|problema/.test(normalized)) {
-      return 'RECLAMO';
-    }
-
-    if (/pago|matr[ií]cula|cuota|fecha de pago/.test(normalized)) {
-      return 'FECHAS_PAGO';
-    }
-
-    if (/inscrib|registr|matricul/.test(normalized)) {
-      return 'INSCRIPCION';
-    }
-
-    if (/admision|ingenier[ií]a|carrera/.test(normalized)) {
-      return 'ADMISIONES';
-    }
-
-    if (/ciclo|inicio|fin|vigente|empieza|termina/.test(normalized)) {
-      return 'FECHAS_CICLOS';
-    }
-
-    return 'DESCONOCIDA';
+    return matchedRule?.intent ?? 'DESCONOCIDA';
   }
 
   // Devuelve el mensaje de respuesta que se enviará al usuario según la intención detectada.

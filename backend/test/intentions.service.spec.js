@@ -1,42 +1,41 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+const globals_1 = require("@jest/globals");
 const intentions_service_1 = require("../src/bot/intentions.service");
-describe('IntentionsService', () => {
+(0, globals_1.describe)('IntentionsService', () => {
     let service;
-    beforeEach(() => {
+    (0, globals_1.beforeEach)(() => {
         service = new intentions_service_1.IntentionsService();
     });
-    it('detecta la intención de fechas de ciclos', () => {
-        expect(service.detect('¿cuándo empieza el ciclo?')).toBe('FECHAS_CICLOS');
-        expect(service.detect('qué fechas tiene el ciclo vigente')).toBe('FECHAS_CICLOS');
+    globals_1.it.each([
+        ['¿cuándo empieza el ciclo?', 'FECHAS_CICLOS'],
+        ['qué fechas tiene el ciclo vigente', 'FECHAS_CICLOS'],
+        ['¿qué fechas de pago hay?', 'FECHAS_PAGO'],
+        ['cuando pago la matrícula', 'FECHAS_PAGO'],
+        ['cómo me inscribo', 'INSCRIPCION'],
+        ['quiero registrarme', 'INSCRIPCION'],
+        ['información sobre admisión a ingeniería', 'ADMISIONES'],
+        ['qué carreras hay', 'ADMISIONES'],
+        ['quiero poner un reclamo', 'RECLAMO'],
+        ['tengo un problema con mi matrícula', 'RECLAMO'],
+        ['hola, ¿qué tal?', 'DESCONOCIDA'],
+        ['', 'DESCONOCIDA'],
+    ])('detecta "%s" como %s', (message, expectedIntent) => {
+        (0, globals_1.expect)(service.detect(message)).toBe(expectedIntent);
     });
-    it('detecta la intención de fechas de pago', () => {
-        expect(service.detect('¿qué fechas de pago hay?')).toBe('FECHAS_PAGO');
-        expect(service.detect('cuando pago la matrícula')).toBe('FECHAS_PAGO');
+    (0, globals_1.it)('detecta intenciones incluso con textos que incluyen acentos', () => {
+        (0, globals_1.expect)(service.detect('quiero hacer mi inscripción')).toBe('INSCRIPCION');
+        (0, globals_1.expect)(service.detect('información sobre admisión')).toBe('ADMISIONES');
     });
-    it('detecta la intención de inscripción', () => {
-        expect(service.detect('cómo me inscribo')).toBe('INSCRIPCION');
-        expect(service.detect('quiero registrarme')).toBe('INSCRIPCION');
-    });
-    it('detecta la intención de admisiones', () => {
-        expect(service.detect('información sobre admisión a ingeniería')).toBe('ADMISIONES');
-        expect(service.detect('qué carreras hay')).toBe('ADMISIONES');
-    });
-    it('detecta la intención de reclamo', () => {
-        expect(service.detect('quiero poner un reclamo')).toBe('RECLAMO');
-        expect(service.detect('tengo un problema con mi matrícula')).toBe('RECLAMO');
-    });
-    it('usa fallback para mensajes desconocidos', () => {
-        expect(service.detect('hola, ¿qué tal?')).toBe('DESCONOCIDA');
-        expect(service.detect('')).toBe('DESCONOCIDA');
-    });
-    it('devuelve una respuesta adecuada para cada intención del catálogo', () => {
-        expect(service.getResponse('FECHAS_CICLOS')).toContain('ciclo');
-        expect(service.getResponse('FECHAS_PAGO')).toContain('pago');
-        expect(service.getResponse('INSCRIPCION')).toContain('inscrib');
-        expect(service.getResponse('ADMISIONES')).toContain('admision');
-        expect(service.getResponse('RECLAMO')).toContain('reclamo');
-        expect(service.getResponse('DESCONOCIDA')).toContain('Estas son mis opciones');
+    globals_1.it.each([
+        ['FECHAS_CICLOS', 'ciclo'],
+        ['FECHAS_PAGO', 'pago'],
+        ['INSCRIPCION', 'inscrib'],
+        ['ADMISIONES', 'admision'],
+        ['RECLAMO', 'reclamo'],
+        ['DESCONOCIDA', 'Estas son mis opciones'],
+    ])('devuelve una respuesta adecuada para %s', (intent, expectedFragment) => {
+        (0, globals_1.expect)(service.getResponse(intent)).toContain(expectedFragment);
     });
 });
 //# sourceMappingURL=intentions.service.spec.js.map

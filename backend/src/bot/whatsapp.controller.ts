@@ -14,10 +14,7 @@ export class WhatsappController {
   @Header('Content-Type', 'text/xml; charset=utf-8')
   // Recibe mensajes de Twilio, los procesa y responde con TwiML para WhatsApp.
   async handleWebhook(@Body() body: any) {
-    // Extrae el texto y el número del remitente desde el payload de Twilio.
-    const messageText = body?.entry?.[0]?.changes?.[0]?.value?.messages?.[0]?.text?.body ?? body?.Body ?? '';
-    const phone = body?.entry?.[0]?.changes?.[0]?.value?.contacts?.[0]?.wa_id ?? body?.From?.replace('whatsapp:', '') ?? 'unknown';
-
+    const { messageText, phone } = this.extractIncomingMessage(body);
     const intent = this.intentionsService.detect(messageText);
     const response = this.intentionsService.getResponse(intent);
 
@@ -25,6 +22,17 @@ export class WhatsappController {
     await this.casesService.addMessage(caseRecord.id, 'INBOUND', messageText);
     await this.casesService.addMessage(caseRecord.id, 'OUTBOUND', response);
 
+    return this.buildTwimlResponse(response);
+  }
+
+  private extractIncomingMessage(body: any) {
+    return {
+      messageText: body?.entry?.[0]?.changes?.[0]?.value?.messages?.[0]?.text?.body ?? body?.Body ?? '',
+      phone: body?.entry?.[0]?.changes?.[0]?.value?.contacts?.[0]?.wa_id ?? body?.From?.replace('whatsapp:', '') ?? 'unknown',
+    };
+  }
+
+  private buildTwimlResponse(response: string) {
     const escapedResponse = response
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')

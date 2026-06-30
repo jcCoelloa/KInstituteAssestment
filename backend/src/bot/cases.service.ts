@@ -1,9 +1,26 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 
+type CaseType = 'CONSULTA' | 'RECLAMO';
+type CaseStatus = 'ABIERTO' | 'EN_PROCESO' | 'CERRADO';
+
+type CaseDefaults = {
+  type: CaseType;
+  status: CaseStatus;
+};
+
+const CASE_DEFAULTS_BY_INTENT: Record<string, CaseDefaults> = {
+  RECLAMO: { type: 'RECLAMO', status: 'ABIERTO' },
+  DEFAULT: { type: 'CONSULTA', status: 'EN_PROCESO' },
+};
+
 @Injectable()
 export class CasesService {
   constructor(private readonly prisma: PrismaService) {}
+
+  private getCaseDefaults(intent: string): CaseDefaults {
+    return CASE_DEFAULTS_BY_INTENT[intent] ?? CASE_DEFAULTS_BY_INTENT.DEFAULT;
+  }
 
   // Crea un caso nuevo o reutiliza el existente para el mismo número de teléfono.
   async createOrGetCase(phone: string, intent: string) {
@@ -13,11 +30,13 @@ export class CasesService {
     });
 
     if (!existing) {
+      const defaults = this.getCaseDefaults(intent);
+
       existing = await this.prisma.case.create({
         data: {
           phone,
-          type: intent === 'RECLAMO' ? 'RECLAMO' : 'CONSULTA',
-          status: intent === 'RECLAMO' ? 'ABIERTO' : 'EN_PROCESO',
+          type: defaults.type,
+          status: defaults.status,
           intent,
         },
       });

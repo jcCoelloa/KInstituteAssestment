@@ -12,6 +12,33 @@ type CaseItem = {
   messages: Array<{ id: number; direction: string; text: string }>;
 };
 
+type FilterState = {
+  type: string;
+  status: string;
+};
+
+const FILTERS = {
+  type: ['ALL', 'CONSULTA', 'RECLAMO'],
+  status: ['ALL', 'ABIERTO', 'EN_PROCESO', 'CERRADO'],
+} as const;
+
+const getCaseStats = (cases: CaseItem[]) => ({
+  total: cases.length,
+  abiertos: cases.filter((item) => item.status === 'ABIERTO').length,
+  proceso: cases.filter((item) => item.status === 'EN_PROCESO').length,
+  cerrados: cases.filter((item) => item.status === 'CERRADO').length,
+});
+
+const filterCases = (cases: CaseItem[], filters: FilterState) =>
+  cases.filter((item) => {
+    const matchesType = filters.type === 'ALL' || item.type === filters.type;
+    const matchesStatus = filters.status === 'ALL' || item.status === filters.status;
+    return matchesType && matchesStatus;
+  });
+
+const getSelectedCase = (cases: CaseItem[], selectedCaseId: number | null) =>
+  cases.find((item) => item.id === selectedCaseId) ?? cases[0] ?? null;
+
 export default function DashboardPage() {
   // Estado principal con los casos que vienen desde el backend.
   const [cases, setCases] = useState<CaseItem[]>([]);
@@ -20,6 +47,8 @@ export default function DashboardPage() {
   const [error, setError] = useState<string | null>(null);
   const [typeFilter, setTypeFilter] = useState('ALL');
   const [statusFilter, setStatusFilter] = useState('ALL');
+
+  const filters = useMemo<FilterState>(() => ({ type: typeFilter, status: statusFilter }), [typeFilter, statusFilter]);
 
   // Carga los casos desde la API del backend y actualiza el estado de la vista.
   const loadCases = async () => {
@@ -41,13 +70,7 @@ export default function DashboardPage() {
   }, []);
 
   // Aplica los filtros de tipo y estado sobre la lista de casos.
-  const filteredCases = useMemo(() => {
-    return cases.filter((item) => {
-      const matchesType = typeFilter === 'ALL' || item.type === typeFilter;
-      const matchesStatus = statusFilter === 'ALL' || item.status === statusFilter;
-      return matchesType && matchesStatus;
-    });
-  }, [cases, typeFilter, statusFilter]);
+  const filteredCases = useMemo(() => filterCases(cases, filters), [cases, filters]);
 
   // Actualiza el estado de un caso desde el panel y vuelve a cargar la lista.
   const updateStatus = async (id: number, status: string) => {
@@ -63,7 +86,7 @@ export default function DashboardPage() {
     }
   };
 
-  const selectedCase = filteredCases.find((item) => item.id === selectedCaseId) ?? filteredCases[0] ?? null;
+  const selectedCase = useMemo(() => getSelectedCase(filteredCases, selectedCaseId), [filteredCases, selectedCaseId]);
 
   useEffect(() => {
     if (!selectedCaseId && filteredCases[0]) {
@@ -72,12 +95,7 @@ export default function DashboardPage() {
   }, [filteredCases, selectedCaseId]);
 
   // Calcula los totales para las tarjetas de resumen del dashboard.
-  const stats = useMemo(() => ({
-    total: cases.length,
-    abiertos: cases.filter((item) => item.status === 'ABIERTO').length,
-    proceso: cases.filter((item) => item.status === 'EN_PROCESO').length,
-    cerrados: cases.filter((item) => item.status === 'CERRADO').length,
-  }), [cases]);
+  const stats = useMemo(() => getCaseStats(cases), [cases]);
 
   return (
     <main style={{ padding: '2rem', fontFamily: 'sans-serif', background: '#f4f7fb', minHeight: '100vh', color: '#111827' }}>
@@ -116,15 +134,14 @@ export default function DashboardPage() {
             <h2 style={{ margin: 0 }}>Casos</h2>
             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
               <select value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)} style={{ padding: '0.45rem', borderRadius: '6px', border: '1px solid #d1d5db', background: '#fff' }}>
-                <option value="ALL">Todos los tipos</option>
-                <option value="CONSULTA">CONSULTA</option>
-                <option value="RECLAMO">RECLAMO</option>
+                {FILTERS.type.map((value) => (
+                  <option key={value} value={value}>{value === 'ALL' ? 'Todos los tipos' : value}</option>
+                ))}
               </select>
               <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} style={{ padding: '0.45rem', borderRadius: '6px', border: '1px solid #d1d5db', background: '#fff' }}>
-                <option value="ALL">Todos los estados</option>
-                <option value="ABIERTO">ABIERTO</option>
-                <option value="EN_PROCESO">EN_PROCESO</option>
-                <option value="CERRADO">CERRADO</option>
+                {FILTERS.status.map((value) => (
+                  <option key={value} value={value}>{value === 'ALL' ? 'Todos los estados' : value}</option>
+                ))}
               </select>
             </div>
           </div>
