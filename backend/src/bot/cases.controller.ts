@@ -12,7 +12,7 @@ export class CasesController {
 
   @Get(':id')
   get(@Param('id') id: string) {
-    return this.casesService.listCases().then((cases) => cases.find((item) => item.id === Number(id)));
+    return this.casesService.getCaseById(Number(id));
   }
 
   @Patch(':id/status')

@@ -22,7 +22,13 @@ model Message {
   id          Int      @id @default(autoincrement())
   caseId      Int
   direction   String
+  channel     String   @default("WHATSAPP")
   text        String
   timestamp   DateTime @default(now())
   case        Case     @relation(fields: [caseId], references: [id])
+}
+
+model ConversationState {
+  phone String @id
+  phase String
 }

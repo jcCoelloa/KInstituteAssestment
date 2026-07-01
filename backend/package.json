@@ -6,7 +6,9 @@
     "dev": "nest start --watch",
     "build": "nest build",
     "start": "node dist/main",
-    "test": "jest --config jest.config.js"
+    "test": "jest --config jest.config.js",
+    "db:init": "prisma migrate dev --name init && prisma generate",
+    "db:reset": "prisma migrate reset --force"
   },
   "dependencies": {
     "@nestjs/common": "^10.2.0",
